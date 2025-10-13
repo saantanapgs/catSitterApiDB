@@ -42,7 +42,8 @@ app.post("/register", async (req, res) => {
         name: true,
         email: true,
         phone: true,
-        birthday: true
+        birthday: true,
+        role: true // Adicionando o campo `role` no registro do usuário
       }
     });
 
@@ -69,8 +70,9 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Senha incorreta." });
     }
 
+    // Criar o token, incluindo o `role` no payload do JWT
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user.id, role: user.role },  // Adicionando o role no payload
       process.env.JWT_SECRET,
       { expiresIn: "7d" } // Token válido por 7 dias
     );
@@ -80,7 +82,8 @@ app.post("/login", async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        role: user.role  // Incluindo o role na resposta do login
       }
     });
   } catch (err) {
@@ -101,6 +104,8 @@ app.get("/me", async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Verificar o token e recuperar o role diretamente do token
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -108,7 +113,8 @@ app.get("/me", async (req, res) => {
         name: true,
         email: true,
         phone: true,
-        birthday: true
+        birthday: true,
+        role: true  // Incluindo o role na resposta do perfil
       }
     });
 
