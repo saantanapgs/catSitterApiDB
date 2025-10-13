@@ -17,4 +17,5 @@ model User {
   birthday  DateTime
   password  String
   createdAt DateTime @default(now())
+  role String @default("client") // "admin" ou "client"
 }
