@@ -1,7 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  // opcional: remova "output" se quiser o padrão (recomendado)
-  // output   = "../generated/prisma"
 }
 
 datasource db {
@@ -10,12 +8,28 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   name      String
-  email     String   @unique
+  email     String    @unique
   phone     String
   birthday  DateTime
   password  String
-  createdAt DateTime @default(now())
-  role String @default("client") // "admin" ou "client"
+  createdAt DateTime  @default(now())
+  role      String    @default("client") // "admin" ou "client"
+
+  // Relação: um usuário pode ter vários serviços
+  services  Service[]
+}
+
+model Service {
+  id          Int       @id @default(autoincrement())
+  petName     String
+  serviceType String
+  date        DateTime
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  // Relacionamento com o usuário
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
 }

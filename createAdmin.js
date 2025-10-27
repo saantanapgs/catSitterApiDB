@@ -1,5 +1,3 @@
-// createAdmin.js
-
 const { PrismaClient } = require("@prisma/client")
 const bcrypt = require("bcrypt")
 
@@ -15,12 +13,12 @@ async function main() {
     return
   }
 
-  const hashedPassword = await bcrypt.hash("thay23009ppebh31244!@#", 10)
+  const hashedPassword = await bcrypt.hash("thayadmin123", 10)
 
   const user = await prisma.user.create({
     data: {
-      name: "Thay",
-      email: "catsitterthay@gmail.com",
+      name: "Tia Thay",
+      email: "petsitterthay@gmail.com",
       phone: "79996405353",
       birthday: new Date("1990-01-01"),
       password: hashedPassword,

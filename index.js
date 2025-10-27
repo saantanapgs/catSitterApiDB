@@ -11,13 +11,15 @@ const prisma = new PrismaClient();
 app.use(cors());
 app.use(express.json());
 
-// REGISTRO
+// ============================
+// 🔐 REGISTRO DE USUÁRIO
+// ============================
 app.post("/register", async (req, res) => {
   const { name, email, phone, birthday, password } = req.body;
 
   if (!name || !email || !phone || !birthday || !password) {
     return res.status(400).json({
-      error: "Por favor, preencha todos os campos obrigatórios."
+      error: "Por favor, preencha todos os campos obrigatórios.",
     });
   }
 
@@ -34,8 +36,8 @@ app.post("/register", async (req, res) => {
         name,
         email,
         phone,
-        birthday,
-        password: hashedPassword
+        birthday: new Date(birthday),
+        password: hashedPassword,
       },
       select: {
         id: true,
@@ -43,8 +45,8 @@ app.post("/register", async (req, res) => {
         email: true,
         phone: true,
         birthday: true,
-        role: true // Adicionando o campo `role` no registro do usuário
-      }
+        role: true,
+      },
     });
 
     res.status(201).json(user);
@@ -54,27 +56,23 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// LOGIN
+// ============================
+// 🔑 LOGIN
+// ============================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const user = await prisma.user.findUnique({ where: { email } });
-
-    if (!user) {
-      return res.status(400).json({ error: "Usuário não encontrado." });
-    }
+    if (!user) return res.status(400).json({ error: "Usuário não encontrado." });
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return res.status(400).json({ error: "Senha incorreta." });
-    }
+    if (!valid) return res.status(400).json({ error: "Senha incorreta." });
 
-    // Criar o token, incluindo o `role` no payload do JWT
     const token = jwt.sign(
-      { userId: user.id, role: user.role },  // Adicionando o role no payload
+      { userId: user.id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" } // Token válido por 7 dias
+      { expiresIn: "7d" }
     );
 
     res.json({
@@ -83,8 +81,8 @@ app.post("/login", async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role  // Incluindo o role na resposta do login
-      }
+        role: user.role,
+      },
     });
   } catch (err) {
     console.error(err);
@@ -92,20 +90,17 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ROTA PROTEGIDA - PERFIL DO USUÁRIO
+// ============================
+// 👤 PERFIL DO USUÁRIO
+// ============================
 app.get("/me", async (req, res) => {
   const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ error: "Token ausente." });
-  }
+  if (!authHeader) return res.status(401).json({ error: "Token ausente." });
 
   const token = authHeader.split(" ")[1];
-
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Verificar o token e recuperar o role diretamente do token
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -114,13 +109,11 @@ app.get("/me", async (req, res) => {
         email: true,
         phone: true,
         birthday: true,
-        role: true  // Incluindo o role na resposta do perfil
-      }
+        role: true,
+      },
     });
 
-    if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado." });
-    }
+    if (!user) return res.status(404).json({ error: "Usuário não encontrado." });
 
     res.json(user);
   } catch (err) {
@@ -129,4 +122,72 @@ app.get("/me", async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("API rodando na porta 3000"));
+// ============================
+// 🧾 CRUD DE SERVIÇOS
+// ============================
+
+// Criar um novo serviço (cliente solicita)
+app.post("/services", async (req, res) => {
+  const { userId, petName, serviceType, date, notes } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: "Usuário não encontrado." });
+
+    const service = await prisma.service.create({
+      data: {
+        userId,
+        petName,
+        serviceType,
+        date: new Date(date),
+        notes,
+      },
+    });
+
+    res.status(201).json(service);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao criar serviço." });
+  }
+});
+
+// Listar todos os serviços (admin)
+app.get("/services", async (req, res) => {
+  try {
+    const services = await prisma.service.findMany({
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, phone: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(services);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao listar serviços." });
+  }
+});
+
+// Listar serviços de um usuário específico (cliente)
+app.get("/services/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const services = await prisma.service.findMany({
+      where: { userId: Number(userId) },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(services);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao buscar serviços do usuário." });
+  }
+});
+
+// ============================
+// 🚀 INICIAR SERVIDOR
+// ============================
+app.listen(3000, () => console.log("✅ API rodando na porta 3000"));
