@@ -29,7 +29,7 @@ model Service {
   notes       String?
   createdAt   DateTime  @default(now())
 
-  // Relacionamento com o usuário
   userId      Int
   user        User      @relation(fields: [userId], references: [id])
+  price       Float    @default(0)  
 }
