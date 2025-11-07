@@ -15,22 +15,24 @@ app.use(express.json());
 // 🔐 REGISTRO DE USUÁRIO
 // ============================
 app.post("/register", async (req, res) => {
-  const { name, email, phone, birthday, password } = req.body;
+  const { name, email, phone, birthday, password, cats } = req.body;
 
+  // 🔸 Validação dos campos obrigatórios
   if (!name || !email || !phone || !birthday || !password) {
-    return res.status(400).json({
-      error: "Por favor, preencha todos os campos obrigatórios.",
-    });
+    return res.status(400).json({ error: "Preencha todos os campos obrigatórios." });
   }
 
   try {
+    // 🔸 Verifica se o e-mail já existe
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ error: "E-mail já cadastrado." });
     }
 
+    // 🔸 Criptografa a senha
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 🔸 Cria o usuário com ou sem gatos
     const user = await prisma.user.create({
       data: {
         name,
@@ -38,20 +40,26 @@ app.post("/register", async (req, res) => {
         phone,
         birthday: new Date(birthday),
         password: hashedPassword,
+        cats: {
+          create: Array.isArray(cats)
+            ? cats.map((cat) => ({
+                name: cat.name,
+                age: cat.age || 0,
+                needs: cat.needs || "",
+              }))
+            : [],
+        },
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        birthday: true,
-        role: true,
-      },
+      include: { cats: true },
     });
 
-    res.status(201).json(user);
+    // 🔸 Retorna usuário criado
+    res.status(201).json({
+      message: "Usuário registrado com sucesso!",
+      user,
+    });
   } catch (err) {
-    console.error(err);
+    console.error("Erro no registro:", err);
     res.status(500).json({ error: "Erro ao registrar o usuário." });
   }
 });
@@ -110,6 +118,7 @@ app.get("/me", async (req, res) => {
         phone: true,
         birthday: true,
         role: true,
+        cats: true, // 👈 incluir os gatos
       },
     });
 
@@ -121,6 +130,7 @@ app.get("/me", async (req, res) => {
     res.status(401).json({ error: "Token inválido ou expirado." });
   }
 });
+
 
 // ============================
 // 🧾 CRUD DE SERVIÇOS
