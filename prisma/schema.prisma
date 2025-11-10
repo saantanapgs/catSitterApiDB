@@ -7,6 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Cat {
+  id            Int      @id @default(autoincrement())
+  name          String
+  age           Int
+  needs         String?
+  createdAt     DateTime @default(now())
+
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+}
+
+
 model User {
   id        Int       @id @default(autoincrement())
   name      String
@@ -15,11 +27,12 @@ model User {
   birthday  DateTime
   password  String
   createdAt DateTime  @default(now())
-  role      String    @default("client") // "admin" ou "client"
+  role      String    @default("client")
 
-  // Relação: um usuário pode ter vários serviços
   services  Service[]
+  cats      Cat[]    
 }
+
 
 model Service {
   id          Int       @id @default(autoincrement())
