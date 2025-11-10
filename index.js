@@ -11,9 +11,7 @@ const prisma = new PrismaClient();
 app.use(cors());
 app.use(express.json());
 
-// ============================
-// 🔐 REGISTRO DE USUÁRIO
-// ============================
+//REGISTRO DE USUÁRIO
 app.post("/register", async (req, res) => {
   const { name, email, phone, birthday, password } = req.body;
 
@@ -56,9 +54,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ============================
-// 🔑 LOGIN
-// ============================
+//LOGIN
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -90,9 +86,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ============================
-// 👤 PERFIL DO USUÁRIO
-// ============================
+//PERFIL DO USUÁRIO
 app.get("/me", async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: "Token ausente." });
@@ -122,9 +116,6 @@ app.get("/me", async (req, res) => {
   }
 });
 
-// ============================
-// 🧾 CRUD DE SERVIÇOS
-// ============================
 
 // Criar um novo serviço (cliente solicita)
 app.post("/services", async (req, res) => {
@@ -187,7 +178,40 @@ app.get("/services/:userId", async (req, res) => {
   }
 });
 
-// ============================
-// 🚀 INICIAR SERVIDOR
-// ============================
+//LISTAR TODOS OS USUÁRIOS (APENAS ADMIN)
+
+app.get("/users", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: "Token ausente." });
+
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Verifica se é admin
+    if (decoded.role !== "ADMIN") {
+      return res.status(403).json({ error: "Acesso negado. Apenas administradores." });
+    }
+
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        birthday: true,
+        role: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ error: "Token inválido ou expirado." });
+  }
+});
+
+
+//INICIAR SERVIDOR
 app.listen(3000, () => console.log("✅ API rodando na porta 3000"));
