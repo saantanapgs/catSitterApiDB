@@ -197,7 +197,7 @@ app.get("/users", async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Verifica se é admin
-    if (decoded.role !== "ADMIN") {
+    if (decoded.role !== "admin") {
       return res.status(403).json({ error: "Acesso negado. Apenas administradores." });
     }
 
