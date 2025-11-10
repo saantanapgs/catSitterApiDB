@@ -125,14 +125,6 @@ app.get("/me", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
-
-// ============================
-// 🧾 CRUD DE SERVIÇOS
-// ============================
->>>>>>> 91960573b3fa0ae2cada0f1bdbf96ce4f918efc5
-
 // Criar um novo serviço (cliente solicita)
 app.post("/services", async (req, res) => {
   const { userId, petName, serviceType, date, notes } = req.body;
